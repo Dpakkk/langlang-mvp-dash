@@ -1,0 +1,357 @@
+---
+title: "Lang Lang Report"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    css: style.css
+    vertical_layout: scroll
+    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(janitor)
+library(data.table)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(curl)
+library(readr)
+```
+
+```{r data load}
+# df <- fread("https://langlang.humanassisted.ai/api/v1/orders/csv",fill=T,
+#             sep=",",
+#             na.strings = c("",NA),
+#             data.table = F, stringsAsFactors = FALSE)%>%clean_names()
+df <- read_csv("https://langlang.humanassisted.ai/api/v1/orders/csv") %>%
+  clean_names()
+```
+
+
+```{r}
+# df <- df %>%
+#   mutate(transcription_diff = (transcription_ended_on - transcription_started_on)/1000) %>%
+#   mutate(transcription_review_diff = (transcription_review_ended_on - transcription_review_started_on)/1000) %>%
+#   mutate(translation_diff = (translation_ended_on - translation_started_on)/1000) %>%
+#   mutate(translation_review_diff = (translation_review_ended_on - translation_review_started_on)/1000)
+# df1 <- df %>%
+#   mutate(transcription_started_on_npt = lubridate::as_datetime((transcription_started_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#   mutate(transcription_ended_on_npt = lubridate::as_datetime((transcription_ended_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#   mutate(transcription_diff = (transcription_ended_on_npt - transcription_started_on_npt)) %>%
+#   mutate(transcription_review_started_on_npt = lubridate::as_datetime((transcription_review_started_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#   mutate(transcription_review_ended_on_npt = lubridate::as_datetime((transcription_review_ended_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#   mutate(transcription_diff = (transcription_review_ended_on_npt - transcription_review_started_on_npt)) %>%
+#   mutate(translation_started_on_npt = lubridate::as_datetime((translation_started_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#   mutate(translation_ended_on_npt = lubridate::as_datetime((translation_ended_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#     mutate(transcription_diff = (transcription_review_ended_on_npt - transcription_review_started_on_npt)) %>%
+# 
+#   mutate(translation_review_started_on_npt = lubridate::as_datetime((translation_review_started_on)/1000, tz = "Nepal/Kathmandu")) %>%
+#   mutate(translation_review_ended_on_npt = lubridate::as_datetime((translation_review_ended_on)/1000, tz = "Nepal/Kathmandu"))
+```
+
+
+```{r}
+# Completed 
+completed_order <- df%>%
+  filter(status == 'completed') %>%
+  summarise(total_order = sum(duration))
+```
+
+```{r analysis}
+#order count
+order_count <- df %>% nrow()
+```
+
+```{r}
+# total audio duration
+total_audio <- df %>% 
+  summarise(total_audio = sum(duration))
+```
+
+
+```{r}
+# total audio duration
+bug_order_count <- df %>%
+  filter(is.na(translation_started_on) & (!is.na(translation_ended_on))) %>%
+  nrow()
+```
+
+
+
+```{r}
+convert_time_hms <- function(secs){
+  hours = secs%/%3600
+  reminder_hr = secs%%3600
+  minutes = reminder_hr%/%60
+  reminder_min = reminder_hr%%60
+  seconds = reminder_min
+  
+  hms_value = paste(hours,"Hr", minutes,"Min")
+  return(hms_value)
+}
+```
+
+
+```{r}
+# Transcription Analysis
+# Transcription Completed
+transcription_completed_df <- df %>%
+  filter(!is.na(transcription_started_on) & (!is.na(transcription_ended_on)))
+
+transcription_completed_vol <- transcription_completed_df %>%
+  summarise(total_volume = sum(duration))
+
+transcription_claimed_df <- df %>%
+  filter(!is.na(transcription_started_on) & (is.na(transcription_ended_on)))
+
+transcription_claimed_vol <- transcription_claimed_df %>%
+    summarise(total_volume = sum(duration))
+
+
+transcription_untouched_df <- df %>%
+  filter(is.na(transcription_started_on) & is.na(transcription_ended_on))
+
+transcription_untouched_vol <- transcription_untouched_df %>%
+  summarise(total_volume = sum(duration))
+
+```
+
+```{r}
+# Translation Analysis
+
+## Translation Completed
+translation_completed_df <- df %>%
+  filter(!is.na(translation_started_on) & (!is.na(translation_ended_on)))
+
+translation_completed_vol <- translation_completed_df %>%
+  summarise(total_volume = sum(duration))
+
+
+## Translation claimed
+translation_claimed_df <- df %>%
+  filter(!is.na(translation_started_on) & (is.na(translation_ended_on)))
+
+translation_claimed_vol <- translation_claimed_df %>%
+    summarise(total_volume = sum(duration))
+
+## Translation untouched
+translation_untouched_df <- df %>%
+  filter(is.na(translation_started_on) & is.na(translation_ended_on))
+
+translation_untouched_vol <- translation_untouched_df %>%
+  summarise(total_volume = sum(duration))
+```
+
+
+
+```{r}
+# Translation Review  Analysis
+
+# Translation review completed
+translation_review_completed_df <- df %>%
+  filter(!is.na(translation_review_started_on) & (!is.na(translation_review_ended_on)))
+
+translation_review_completed_vol <- translation_review_completed_df %>%
+  summarise(total_volume = sum(duration))
+
+
+## Translation review claimed
+translation_review_claimed_df <- df %>%
+  filter(!is.na(translation_review_started_on) & (is.na(translation_review_ended_on)))
+
+translation_review_claimed_vol <- translation_review_claimed_df %>%
+    summarise(total_volume = sum(duration))
+
+## Translation review untouched
+translation_review_untouched_df <- df %>%
+  filter(is.na(translation_review_started_on) & is.na(translation_review_ended_on))
+
+translation_review_untouched_vol <- translation_review_untouched_df %>%
+  summarise(total_volume = sum(duration))
+```
+
+
+
+```{r}
+### USer's Volume
+
+## Transcription Volume by User
+user_transcription_volume <- df %>%
+  filter(!is.na(transcription_user)) %>%
+  group_by(transcription_user) %>%
+  filter(transcription_user != '5feb4092f44a284f837fc06e') %>%
+  filter(transcription_user != '5fedd0e07c5473086fc66e60') %>%
+  summarise(total_volume = convert_time_hms(sum(duration)))
+
+## Transcription Review Volume by User
+user_transcription_review_volume <- df %>%
+  filter(!is.na(transcription_review_user)) %>%
+  group_by(transcription_review_user) %>%
+  summarise(total_volume = convert_time_hms(sum(duration)))
+
+
+## Translation Volume by User
+user_translation_volume <- df %>%
+  filter(!is.na(translation_user)) %>%
+  group_by(translation_user) %>%
+  filter(translation_user != '5fedd0e07c5473086fc66e60') %>%
+  summarise(total_volume = convert_time_hms(sum(duration)))
+
+## Translation Review Volume by User
+user_translation_review_volume <- df %>%
+  filter(!is.na(translation_review_user)) %>%
+  group_by(translation_review_user) %>%
+  filter(translation_review_user != '5fedd0e07c5473086fc66e60') %>%
+  summarise(total_volume = convert_time_hms(sum(duration)))
+
+```
+
+```{r}
+
+```
+
+
+Row
+-----------------------------------------------------------------------
+### Order Count
+
+```{r}
+valueBox(order_count)
+```
+
+### Completed Order
+
+```{r}
+valueBox(convert_time_hms(completed_order),color = "#ab1236")
+```
+
+
+### Total Audio Volume
+
+```{r}
+valueBox(convert_time_hms(total_audio), icon = "fa-speaker")
+```
+
+
+### Bug Order Count
+
+```{r}
+valueBox(bug_order_count,  color = "#ab1236")
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+<h4 style="width:100%"> Transcription</h4>
+
+
+Row 
+-----------------------------------------------------------------------
+
+
+### Transcription Completed
+```{r}
+valueBox(convert_time_hms(transcription_completed_vol), color = "#00994c")
+```
+
+### Transcription Claimed
+
+```{r}
+valueBox(convert_time_hms(transcription_claimed_vol), color="#fdad5c")
+```
+
+### Transcription Untouched
+
+```{r}
+valueBox(convert_time_hms(transcription_untouched_vol),  color = "#ab1236")
+```
+
+
+
+Row
+-----------------------------------------------------------------------
+
+<h4> Translation</h4>
+
+Row
+-----------------------------------------------------------------------
+
+### Translation Completed
+```{r}
+valueBox(convert_time_hms(translation_completed_vol), color="#00994c")
+```
+
+### Translation Claimed
+
+```{r}
+valueBox(convert_time_hms(translation_claimed_vol),  color="#fdad5c")
+```
+
+### Translation Untouched
+
+```{r}
+valueBox(convert_time_hms(translation_untouched_vol),  color="#ab1236")
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+<h4> Translation-Review</h4>
+
+
+Row
+-----------------------------------------------------------------------
+
+
+### Translation Review Completed
+```{r}
+valueBox(convert_time_hms(translation_review_completed_vol), color = "#00994c")
+```
+
+### Translation Review Claimed
+
+```{r}
+
+valueBox(convert_time_hms(translation_review_claimed_vol),  color = "#fdad5c")
+```
+
+### Translation Review Untouched
+
+```{r}
+valueBox(convert_time_hms(translation_review_untouched_vol),  color = "#ab1236")
+```
+
+Row
+-----------------------------------------------------------------------
+
+
+<h4> User Volume Distribution</h4>
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### Transcription Volume
+```{r}
+knitr::kable(user_transcription_volume)
+```
+   
+### Transcription Review Volume
+```{r}
+knitr::kable(user_transcription_review_volume)
+```
+
+### Translation Volume
+```{r}
+knitr::kable(user_translation_volume)
+```
+   
+### Translation Review Volume
+```{r}
+knitr::kable(user_translation_review_volume)
+```
+
+

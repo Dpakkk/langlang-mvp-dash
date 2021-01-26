@@ -1,0 +1,62 @@
+#section-row-1{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+
+#section-row-3{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+#section-row-5{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+#section-row-7{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+
+#row-1{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+
+#row-3{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+#row-5{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+#row-7{
+  max-height: 50px;
+  margin-left: 15px;
+}
+
+
+
+.h4{
+  font-weight: normal;
+}
+.value-box .caption {
+    font-size: 20px;
+    font-weight: normal;
+}
+
+.navbar>.container .navbar-brand, .navbar>.container-fluid .navbar-brand {
+    margin-left: -15px;
+    font-size: 20px;
+}
+
+.nav-tabs-custom > .nav-tabs > li > a, .nav-tabs-custom > .nav-tabs > li > a:active {
+    font-weight: 500;
+    font-size: 1.5em;
+}
